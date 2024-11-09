@@ -238,18 +238,16 @@
         }
 
         function fetchRemotes() {
-            alert("fetchRemotes1");
-            Telegram.WebApp.sendData(JSON.stringify({ command: "get_remotes" }));
-            alert("fetchRemotes2");
+            Telegram.WebApp.sendData(JSON.stringify({"command": "get_remotes" }));
         }
 
         function fetchFiles() {
             const remote = document.getElementById("remoteSelect").value;
             if (remote) {
                 Telegram.WebApp.sendData(JSON.stringify({ 
-                    command: "list_files", 
-                    remote: remote, 
-                    path: currentPath 
+                    "command": "list_files", 
+                    "remote": remote, 
+                    "path": "currentPath"
                 }));
             }
             updateBreadcrumb();
@@ -317,8 +315,8 @@
         function submitSelected() {
             if (selectedPaths.length > 0) {
                 Telegram.WebApp.sendData(JSON.stringify({ 
-                    command: "submit_paths", 
-                    selected_paths: selectedPaths 
+                    "command": "submit_paths", 
+                    "selected_paths": "selectedPaths"
                 }));
                 Telegram.WebApp.close();
             }
