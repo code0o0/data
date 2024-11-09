@@ -264,9 +264,9 @@
             submitButton.textContent = `Select Files (${selectedPaths.length} selected)`;
         }
 
-        Telegram.WebApp.onEvent("mainButtonClicked", function() {
-            submitSelected();
-        });
+        // Telegram.WebApp.onEvent("mainButtonClicked", function() {
+        //     submitSelected();
+        // });
 
         function displayFileList(files) {
             const fileList = document.getElementById("fileList");
