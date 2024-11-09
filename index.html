@@ -14,8 +14,6 @@
             --card-background: #ffffff;
             --text-color: #333333;
             --border-color: #e0e0e0;
-            --error-color: #f44336;
-            --success-color: #4CAF50;
             --spacing-unit: 16px;
         }
 
@@ -45,7 +43,6 @@
         .header {
             text-align: center;
             margin-bottom: calc(var(--spacing-unit) * 1.5);
-            position: relative;
         }
 
         .header h1 {
@@ -60,16 +57,11 @@
             border-radius: 6px;
             margin-bottom: var(--spacing-unit);
             font-size: 0.9rem;
-            white-space: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .breadcrumb span {
             color: var(--primary-color);
             cursor: pointer;
-            display: inline-block;
-            padding: 0 4px;
         }
 
         .breadcrumb span:hover {
@@ -135,7 +127,7 @@
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease;
         }
 
         .file-item:last-child {
@@ -153,8 +145,6 @@
         .file-icon {
             margin-right: calc(var(--spacing-unit) * 0.75);
             font-size: 1.2rem;
-            min-width: 24px;
-            text-align: center;
         }
 
         .file-name {
@@ -162,13 +152,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            padding-right: var(--spacing-unit);
-        }
-
-        .file-size {
-            font-size: 0.85rem;
-            color: #666;
-            white-space: nowrap;
         }
 
         .submit-button {
@@ -180,11 +163,7 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            transition: background-color 0.2s ease;
         }
 
         .submit-button:hover {
@@ -196,59 +175,10 @@
             cursor: not-allowed;
         }
 
-        .submit-button .count {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-        }
-
         .empty-state {
             text-align: center;
             padding: calc(var(--spacing-unit) * 2);
             color: #666;
-        }
-
-        .loading {
-            text-align: center;
-            padding: var(--spacing-unit);
-            color: var(--primary-color);
-        }
-
-        .error-message {
-            color: var(--error-color);
-            background-color: rgba(244, 67, 54, 0.1);
-            padding: var(--spacing-unit);
-            border-radius: 6px;
-            margin-bottom: var(--spacing-unit);
-            display: none;
-        }
-
-        .back-button {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            cursor: pointer;
-            padding: 8px;
-            display: none;
-        }
-
-        .back-button:hover {
-            color: var(--hover-color);
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: var(--spacing-unit);
-            }
-
-            .file-size {
-                display: none;
-            }
         }
     </style>
 </head>
@@ -256,14 +186,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <button class="back-button" id="backButton" onclick="goBack()">←</button>
             <h1>Rclone Explorer</h1>
         </div>
-
-        <div id="errorMessage" class="error-message"></div>
         
         <div class="breadcrumb" id="breadcrumb">
-            <span onclick="navigateToRoot()">Home</span>
+            <!-- Breadcrumb will be populated by JavaScript -->
         </div>
 
         <div class="select-wrapper">
@@ -273,35 +200,21 @@
         </div>
 
         <div class="file-list" id="fileList">
-            <div class="loading">Loading...</div>
+            <!-- File list will be populated by JavaScript -->
         </div>
 
         <button id="submitButton" class="submit-button" onclick="submitSelected()" disabled>
-            <span>Select Files</span>
-            <span class="count">0 selected</span>
+            Select Files
         </button>
     </div>
 
     <script>
+        Telegram.WebApp.ready();
+
         let selectedPaths = [];
         let currentPath = "";
         let pathHistory = [];
-        let isLoading = false;
 
-        // 初始化 Telegram WebApp
-        Telegram.WebApp.ready();
-
-        // 错误处理函数
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
-        }
-
-        // 更新面包屑导航
         function updateBreadcrumb() {
             const breadcrumb = document.getElementById('breadcrumb');
             const paths = ['Home', ...currentPath.split('/').filter(Boolean)];
@@ -312,87 +225,49 @@
                 }
                 return `<span onclick="navigateTo(${index})">${path}</span> / `;
             }).join('');
-
-            // 更新后退按钮显示状态
-            document.getElementById('backButton').style.display = 
-                currentPath ? 'block' : 'none';
         }
 
-        // 导航到指定路径
         function navigateTo(index) {
             if (index === 0) {
-                navigateToRoot();
+                currentPath = "";
             } else {
                 const paths = currentPath.split('/').filter(Boolean);
                 currentPath = paths.slice(0, index).join('/');
-                fetchFiles();
             }
-        }
-
-        // 导航到根目录
-        function navigateToRoot() {
-            currentPath = "";
-            pathHistory = [];
             fetchFiles();
         }
 
-        // 返回上一级
-        function goBack() {
-            if (pathHistory.length > 0) {
-                pathHistory.pop();
-                currentPath = pathHistory[pathHistory.length - 1] || "";
-                fetchFiles();
-            }
-        }
-
-        // 获取远程存储列表
         function fetchRemotes() {
-            if (isLoading) return;
-            isLoading = true;
-
-            try {
-                Telegram.WebApp.sendData(JSON.stringify({ 
-                    command: "get_remotes",
-                    query_id: Telegram.WebApp.initDataUnsafe?.query_id
-                }));
-            } catch (error) {
-                showError('Error fetching remotes: ' + error.message);
-                isLoading = false;
-            }
+            const queryId = Telegram.WebApp.initDataUnsafe.query_id;
+            Telegram.WebApp.sendData(JSON.stringify({
+                command: "get_remotes",
+                query_id: queryId
+            }));
         }
 
-        // 获取文件列表
         function fetchFiles() {
-            if (isLoading) return;
-            isLoading = true;
-
             const remote = document.getElementById("remoteSelect").value;
             if (remote) {
-                try {
-                    Telegram.WebApp.sendData(JSON.stringify({ 
-                        command: "list_files", 
-                        remote: remote, 
-                        path: currentPath,
-                        query_id: Telegram.WebApp.initDataUnsafe?.query_id
-                    }));
-                } catch (error) {
-                    showError('Error fetching files: ' + error.message);
-                    isLoading = false;
-                }
+                Telegram.WebApp.sendData(JSON.stringify({ 
+                    command: "list_files", 
+                    remote: remote, 
+                    path: "currentPath"
+                }));
             }
             updateBreadcrumb();
             updateSubmitButton();
         }
 
-        // 更新提交按钮状态
         function updateSubmitButton() {
             const submitButton = document.getElementById('submitButton');
-            const count = selectedPaths.length;
-            submitButton.disabled = count === 0;
-            submitButton.querySelector('.count').textContent = `${count} selected`;
+            submitButton.disabled = selectedPaths.length === 0;
+            submitButton.textContent = `Select Files (${selectedPaths.length} selected)`;
         }
 
-        // 显示文件列表
+        Telegram.WebApp.onEvent("mainButtonClicked", function() {
+            submitSelected();
+        });
+
         function displayFileList(files) {
             const fileList = document.getElementById("fileList");
             fileList.innerHTML = '';
@@ -406,20 +281,13 @@
                 return;
             }
 
-            // 先排序：文件夹在前，文件在后，按名称排序
-            const sortedFiles = files.sort((a, b) => {
-                if (a.isDir !== b.isDir) return b.isDir - a.isDir;
-                return a.name.localeCompare(b.name);
-            });
-
-            sortedFiles.forEach(file => {
+            files.forEach(file => {
                 const fileElement = document.createElement("div");
                 fileElement.className = `file-item ${selectedPaths.includes(file.path) ? 'selected' : ''}`;
                 
                 fileElement.innerHTML = `
                     <span class="file-icon">${file.isDir ? '📁' : '📄'}</span>
                     <span class="file-name">${file.name || file.path.split('/').pop()}</span>
-                    ${file.size ? `<span class="file-size">${formatFileSize(file.size)}</span>` : ''}
                 `;
 
                 fileElement.onclick = () => {
@@ -436,16 +304,6 @@
             });
         }
 
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-        }
-
-        // 切换文件选择状态
         function toggleSelection(path, element) {
             const index = selectedPaths.indexOf(path);
             if (index === -1) {
@@ -458,148 +316,19 @@
             updateSubmitButton();
         }
 
-        // 提交选中的文件
         function submitSelected() {
             if (selectedPaths.length > 0) {
-                try {
-                    Telegram.WebApp.sendData(JSON.stringify({ 
-                        command: "submit_paths", 
-                        selected_paths: selectedPaths 
-                    }));
-                    Telegram.WebApp.close();
-                } catch (error) {
-                    showError('Error submitting selection: ' + error.message);
-                }
+                Telegram.WebApp.sendData(JSON.stringify({ 
+                    command: "submit_paths", 
+                    selected_paths: "selectedPaths"
+                }));
+                Telegram.WebApp.close();
             }
         }
-        
-        // 处理接收到的数据
-        Telegram.WebApp.onEvent('web_app_data', function(data) {
-            isLoading = false;
-            
-            try {
-                const response = JSON.parse(data);
-                
-                // 处理远程存储列表
-                if (response.remotes) {
-                    const select = document.getElementById("remoteSelect");
-                    select.innerHTML = '<option value="">Select Remote</option>';
-                    
-                    response.remotes.sort().forEach(remote => {
-                        const option = document.createElement("option");
-                        option.value = remote;
-                        option.text = remote;
-                        select.appendChild(option);
-                    });
-
-                    // 如果只有一个远程存储，自动选择它
-                    if (response.remotes.length === 1) {
-                        select.value = response.remotes[0];
-                        fetchFiles();
-                    }
-                }
-
-                // 处理文件列表
-                if (response.files) {
-                    displayFileList(response.files);
-                }
-
-                // 处理错误消息
-                if (response.error) {
-                    showError(response.error);
-                }
-
-            } catch (error) {
-                console.error('Error processing received data:', error);
-                showError('Failed to process server response');
-            }
-        });
-
-        // 监听远程存储选择改变
-        document.getElementById("remoteSelect").addEventListener('change', function() {
-            selectedPaths = []; // 清空已选择的文件
-            currentPath = ""; // 重置当前路径
-            pathHistory = []; // 清空路径历史
-            fetchFiles();
-        });
-
-        // 添加键盘导航支持
-        document.addEventListener('keydown', function(e) {
-            switch(e.key) {
-                case 'Backspace':
-                    if (currentPath) {
-                        e.preventDefault();
-                        goBack();
-                    }
-                    break;
-                case 'Enter':
-                    if (selectedPaths.length > 0) {
-                        submitSelected();
-                    }
-                    break;
-                case 'Escape':
-                    Telegram.WebApp.close();
-                    break;
-            }
-        });
-
-        // 添加触摸滑动支持
-        let touchStartX = 0;
-        document.addEventListener('touchstart', function(e) {
-            touchStartX = e.touches[0].clientX;
-        });
-
-        document.addEventListener('touchend', function(e) {
-            const touchEndX = e.changedTouches[0].clientX;
-            const diff = touchStartX - touchEndX;
-
-            // 如果滑动距离超过50像素
-            if (Math.abs(diff) > 50) {
-                if (diff < 0 && currentPath) { // 向右滑动，返回上一级
-                    goBack();
-                }
-            }
-        });
-
-        // 处理主题切换
-        const initTheme = () => {
-            const colorScheme = Telegram.WebApp.colorScheme;
-            const root = document.documentElement;
-
-            if (colorScheme === 'dark') {
-                root.style.setProperty('--background-color', '#1f1f1f');
-                root.style.setProperty('--card-background', '#2d2d2d');
-                root.style.setProperty('--text-color', '#ffffff');
-                root.style.setProperty('--border-color', '#404040');
-                root.style.setProperty('--primary-color', '#64B5F6');
-                root.style.setProperty('--hover-color', '#42A5F5');
-            } else {
-                root.style.setProperty('--background-color', '#f5f5f5');
-                root.style.setProperty('--card-background', '#ffffff');
-                root.style.setProperty('--text-color', '#333333');
-                root.style.setProperty('--border-color', '#e0e0e0');
-                root.style.setProperty('--primary-color', '#2196F3');
-                root.style.setProperty('--hover-color', '#1976D2');
-            }
-        };
-
-        // 监听主题变化
-        Telegram.WebApp.onEvent('themeChanged', initTheme);
 
         // 初始化页面
-        initTheme();
-        fetchRemotes();
         Telegram.WebApp.expand();
-
-        // 显示加载动画
-        const showLoading = () => {
-            const fileList = document.getElementById("fileList");
-            fileList.innerHTML = '<div class="loading">Loading...</div>';
-        };
-
-        // 在获取数据之前显示加载动画
-        showLoading();
+        fetchRemotes();
     </script>
 </body>
 </html>
-    
