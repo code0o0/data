@@ -239,10 +239,11 @@
 
         function fetchRemotes() {
             const queryId = Telegram.WebApp.initDataUnsafe.query_id;
-            Telegram.WebApp.sendData(JSON.stringify({
-                command: "get_remotes",
-                query_id: queryId
-            }));
+            alert(queryId);
+            // Telegram.WebApp.sendData(JSON.stringify({
+            //     command: "get_remotes",
+            //     query_id: queryId
+            // }));
         }
 
         function fetchFiles() {
