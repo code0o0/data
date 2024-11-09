@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Rclone Explorer</title>
@@ -110,10 +111,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Rclone</h2>
-        <select id="remoteSelect" onchange="fetchFiles()"></select>
+        <select id="remoteSelect" onclick="fetchFiles()">
+            <option value="">Select Remote</option>
+        </select>
+
 
         <div id="fileList"></div>
         <button onclick="submitSelected()">Submit Selected Paths</button>
@@ -131,10 +136,18 @@
 
         function fetchFiles() {
             const remote = document.getElementById("remoteSelect").value;
-            Telegram.WebApp.sendData(JSON.stringify({ command: "list_files", remote: remote, path: currentPath }));
+            if (remote) {
+                Telegram.WebApp.sendData(JSON.stringify({ command: "list_files", remote: remote, path: currentPath }));
+            }
         }
-
-        Telegram.WebApp.onEvent("web_app_data", function(data) {
+            let response;
+            try {
+                response = JSON.parse(data);
+            } catch (e) {
+                console.error("Failed to parse data:", e);
+                return;
+            }
+        Telegram.WebApp.onEvent("web_app_data", function (data) {
             const response = JSON.parse(data);
 
             // Populate remotes dropdown
@@ -189,5 +202,10 @@
 
         fetchRemotes();
     </script>
+    <script type="text/javascript">
+        // 页面在加载后自动扩展至最大尺寸
+        Telegram.WebApp.expand();
+    </script>
 </body>
+
 </html>
