@@ -238,7 +238,7 @@
         }
 
         function fetchRemotes() {
-            const data = Telegram.WebApp.initDataUnsafe;
+            const data = Telegram.WebApp.initData;
             Telegram.WebApp.sendData(JSON.stringify({
                 command: "get_remotes",
                 user_data: data
