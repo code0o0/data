@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rclone Explorer</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* 设置背景色和字体 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* 页面容器样式 */
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        h2 {
+            color: #4CAF50;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        /* Remote 选择下拉菜单样式 */
+        #remoteSelect {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        /* 文件列表样式 */
+        #fileList {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        #fileList div {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            cursor: pointer;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        #fileList div:hover {
+            background-color: #e0f7fa;
+        }
+
+        /* 选中文件的样式 */
+        .selected {
+            background-color: #4CAF50;
+            color: #ffffff;
+        }
+
+        /* 文件夹图标样式 */
+        .folder-icon::before {
+            content: "📁 ";
+            margin-right: 8px;
+        }
+
+        /* 文件图标样式 */
+        .file-icon::before {
+            content: "📄 ";
+            margin-right: 8px;
+        }
+
+        /* 提交按钮样式 */
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Rclone</h2>
+        <select id="remoteSelect" onchange="fetchFiles()"></select>
+
+        <div id="fileList"></div>
+        <button onclick="submitSelected()">Submit Selected Paths</button>
+    </div>
+
+    <script>
+        Telegram.WebApp.ready();
+
+        let selectedPaths = [];
+        let currentPath = "";
+
+        function fetchRemotes() {
+            Telegram.WebApp.sendData(JSON.stringify({ command: "get_remotes" }));
+        }
+
+        function fetchFiles() {
+            const remote = document.getElementById("remoteSelect").value;
+            Telegram.WebApp.sendData(JSON.stringify({ command: "list_files", remote: remote, path: currentPath }));
+        }
+
+        Telegram.WebApp.onEvent("web_app_data", function(data) {
+            const response = JSON.parse(data);
+
+            // Populate remotes dropdown
+            if (response.remotes) {
+                const select = document.getElementById("remoteSelect");
+                select.innerHTML = '';
+                response.remotes.forEach(remote => {
+                    const option = document.createElement("option");
+                    option.value = remote;
+                    option.text = remote;
+                    select.appendChild(option);
+                });
+                fetchFiles(); // Fetch files after loading remotes
+            }
+
+            // Populate file list
+            if (response.files) {
+                const fileList = document.getElementById("fileList");
+                fileList.innerHTML = '';
+                response.files.forEach(file => {
+                    const fileElement = document.createElement("div");
+                    fileElement.classList.add(file.isDir ? "folder-icon" : "file-icon");
+                    fileElement.classList.toggle("selected", selectedPaths.includes(file.path));
+                    fileElement.textContent = file.path;
+                    fileElement.onclick = () => {
+                        if (file.isDir) {
+                            currentPath = file.path;
+                            fetchFiles();
+                        } else {
+                            toggleSelection(file.path);
+                        }
+                    };
+                    fileList.appendChild(fileElement);
+                });
+            }
+        });
+
+        function toggleSelection(path) {
+            const index = selectedPaths.indexOf(path);
+            if (index === -1) {
+                selectedPaths.push(path);
+            } else {
+                selectedPaths.splice(index, 1);
+            }
+            fetchFiles();
+        }
+
+        function submitSelected() {
+            Telegram.WebApp.sendData(JSON.stringify({ command: "submit_paths", selected_paths: selectedPaths }));
+            Telegram.WebApp.close();
+        }
+
+        fetchRemotes();
+    </script>
+</body>
+</html>
