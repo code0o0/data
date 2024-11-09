@@ -238,7 +238,9 @@
         }
 
         function fetchRemotes() {
+            alert("fetchRemotes1");
             Telegram.WebApp.sendData(JSON.stringify({ command: "get_remotes" }));
+            alert("fetchRemotes2");
         }
 
         function fetchFiles() {
