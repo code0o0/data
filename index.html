@@ -3,125 +3,209 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rclone Explorer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* 设置背景色和字体 */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        :root {
+            --primary-color: #2196F3;
+            --hover-color: #1976D2;
+            --background-color: #f5f5f5;
+            --card-background: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --spacing-unit: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            color: #333;
         }
 
-        /* 页面容器样式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: var(--spacing-unit);
+        }
+
         .container {
-            width: 90%;
-            max-width: 500px;
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: calc(var(--spacing-unit) * 1.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        h2 {
-            color: #4CAF50;
+        .header {
             text-align: center;
-            margin-top: 0;
+            margin-bottom: calc(var(--spacing-unit) * 1.5);
         }
 
-        /* Remote 选择下拉菜单样式 */
-        #remoteSelect {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f1f1f1;
-            color: #333;
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: var(--spacing-unit);
         }
 
-        /* 文件列表样式 */
-        #fileList {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #f9f9f9;
+        .breadcrumb {
+            background: #f8f9fa;
+            padding: calc(var(--spacing-unit) * 0.5);
+            border-radius: 6px;
+            margin-bottom: var(--spacing-unit);
+            font-size: 0.9rem;
         }
 
-        #fileList div {
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin: 5px 0;
+        .breadcrumb span {
+            color: var(--primary-color);
             cursor: pointer;
-            background-color: #fff;
+        }
+
+        .breadcrumb span:hover {
+            text-decoration: underline;
+        }
+
+        .select-wrapper {
+            position: relative;
+            margin-bottom: var(--spacing-unit);
+        }
+
+        select {
+            width: 100%;
+            padding: calc(var(--spacing-unit) * 0.75);
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-background);
+            appearance: none;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-color);
+            font-size: 0.8rem;
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: var(--spacing-unit);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .file-item {
+            padding: calc(var(--spacing-unit) * 0.75);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            transition: background-color 0.2s;
-        }
-
-        #fileList div:hover {
-            background-color: #e0f7fa;
-        }
-
-        /* 选中文件的样式 */
-        .selected {
-            background-color: #4CAF50;
-            color: #ffffff;
-        }
-
-        /* 文件夹图标样式 */
-        .folder-icon::before {
-            content: "📁 ";
-            margin-right: 8px;
-        }
-
-        /* 文件图标样式 */
-        .file-icon::before {
-            content: "📄 ";
-            margin-right: 8px;
-        }
-
-        /* 提交按钮样式 */
-        button {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s;
+            transition: background-color 0.2s ease;
         }
 
-        button:hover {
-            background-color: #45a049;
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-item:hover {
+            background-color: rgba(33, 150, 243, 0.05);
+        }
+
+        .file-item.selected {
+            background-color: rgba(33, 150, 243, 0.1);
+        }
+
+        .file-icon {
+            margin-right: calc(var(--spacing-unit) * 0.75);
+            font-size: 1.2rem;
+        }
+
+        .file-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: calc(var(--spacing-unit) * 0.75);
+            font-size: 1rem;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .submit-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .submit-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: calc(var(--spacing-unit) * 2);
+            color: #666;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h2>Rclone</h2>
-        <select id="remoteSelect" onclick="fetchFiles()">
-            <option value="">Select Remote</option>
-        </select>
+        <div class="header">
+            <h1>Rclone Explorer</h1>
+        </div>
+        
+        <div class="breadcrumb" id="breadcrumb">
+            <!-- Breadcrumb will be populated by JavaScript -->
+        </div>
 
+        <div class="select-wrapper">
+            <select id="remoteSelect" aria-label="Select Remote">
+                <option value="">Select Remote</option>
+            </select>
+        </div>
 
-        <div id="fileList"></div>
-        <button onclick="submitSelected()">Submit Selected Paths</button>
+        <div class="file-list" id="fileList">
+            <!-- File list will be populated by JavaScript -->
+        </div>
+
+        <button id="submitButton" class="submit-button" onclick="submitSelected()" disabled>
+            Select Files
+        </button>
     </div>
 
     <script>
@@ -129,6 +213,29 @@
 
         let selectedPaths = [];
         let currentPath = "";
+        let pathHistory = [];
+
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const paths = ['Home', ...currentPath.split('/').filter(Boolean)];
+            
+            breadcrumb.innerHTML = paths.map((path, index) => {
+                if (index === paths.length - 1) {
+                    return `<span class="current">${path}</span>`;
+                }
+                return `<span onclick="navigateTo(${index})">${path}</span> / `;
+            }).join('');
+        }
+
+        function navigateTo(index) {
+            if (index === 0) {
+                currentPath = "";
+            } else {
+                const paths = currentPath.split('/').filter(Boolean);
+                currentPath = paths.slice(0, index).join('/');
+            }
+            fetchFiles();
+        }
 
         function fetchRemotes() {
             Telegram.WebApp.sendData(JSON.stringify({ command: "get_remotes" }));
@@ -137,75 +244,87 @@
         function fetchFiles() {
             const remote = document.getElementById("remoteSelect").value;
             if (remote) {
-                Telegram.WebApp.sendData(JSON.stringify({ command: "list_files", remote: remote, path: currentPath }));
+                Telegram.WebApp.sendData(JSON.stringify({ 
+                    command: "list_files", 
+                    remote: remote, 
+                    path: currentPath 
+                }));
             }
+            updateBreadcrumb();
+            updateSubmitButton();
         }
-            let response;
-            try {
-                response = JSON.parse(data);
-            } catch (e) {
-                console.error("Failed to parse data:", e);
-                return;
-            }
-        Telegram.WebApp.onEvent("web_app_data", function (data) {
-            const response = JSON.parse(data);
 
-            // Populate remotes dropdown
-            if (response.remotes) {
-                const select = document.getElementById("remoteSelect");
-                select.innerHTML = '';
-                response.remotes.forEach(remote => {
-                    const option = document.createElement("option");
-                    option.value = remote;
-                    option.text = remote;
-                    select.appendChild(option);
-                });
-                fetchFiles(); // Fetch files after loading remotes
-            }
+        function updateSubmitButton() {
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = selectedPaths.length === 0;
+            submitButton.textContent = `Select Files (${selectedPaths.length} selected)`;
+        }
 
-            // Populate file list
-            if (response.files) {
-                const fileList = document.getElementById("fileList");
-                fileList.innerHTML = '';
-                response.files.forEach(file => {
-                    const fileElement = document.createElement("div");
-                    fileElement.classList.add(file.isDir ? "folder-icon" : "file-icon");
-                    fileElement.classList.toggle("selected", selectedPaths.includes(file.path));
-                    fileElement.textContent = file.path;
-                    fileElement.onclick = () => {
-                        if (file.isDir) {
-                            currentPath = file.path;
-                            fetchFiles();
-                        } else {
-                            toggleSelection(file.path);
-                        }
-                    };
-                    fileList.appendChild(fileElement);
-                });
-            }
+        Telegram.WebApp.onEvent("mainButtonClicked", function() {
+            submitSelected();
         });
 
-        function toggleSelection(path) {
+        function displayFileList(files) {
+            const fileList = document.getElementById("fileList");
+            fileList.innerHTML = '';
+
+            if (!files || files.length === 0) {
+                fileList.innerHTML = `
+                    <div class="empty-state">
+                        <p>No files found in this directory</p>
+                    </div>
+                `;
+                return;
+            }
+
+            files.forEach(file => {
+                const fileElement = document.createElement("div");
+                fileElement.className = `file-item ${selectedPaths.includes(file.path) ? 'selected' : ''}`;
+                
+                fileElement.innerHTML = `
+                    <span class="file-icon">${file.isDir ? '📁' : '📄'}</span>
+                    <span class="file-name">${file.name || file.path.split('/').pop()}</span>
+                `;
+
+                fileElement.onclick = () => {
+                    if (file.isDir) {
+                        currentPath = file.path;
+                        pathHistory.push(currentPath);
+                        fetchFiles();
+                    } else {
+                        toggleSelection(file.path, fileElement);
+                    }
+                };
+
+                fileList.appendChild(fileElement);
+            });
+        }
+
+        function toggleSelection(path, element) {
             const index = selectedPaths.indexOf(path);
             if (index === -1) {
                 selectedPaths.push(path);
+                element.classList.add('selected');
             } else {
                 selectedPaths.splice(index, 1);
+                element.classList.remove('selected');
             }
-            fetchFiles();
+            updateSubmitButton();
         }
 
         function submitSelected() {
-            Telegram.WebApp.sendData(JSON.stringify({ command: "submit_paths", selected_paths: selectedPaths }));
-            Telegram.WebApp.close();
+            if (selectedPaths.length > 0) {
+                Telegram.WebApp.sendData(JSON.stringify({ 
+                    command: "submit_paths", 
+                    selected_paths: selectedPaths 
+                }));
+                Telegram.WebApp.close();
+            }
         }
 
+        // 初始化页面
         fetchRemotes();
-    </script>
-    <script type="text/javascript">
-        // 页面在加载后自动扩展至最大尺寸
         Telegram.WebApp.expand();
     </script>
 </body>
-
 </html>
