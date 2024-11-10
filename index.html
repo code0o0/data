@@ -19,7 +19,8 @@
     Telegram.WebApp.MainButton.setText('Choose Color').show().onClick(function () {
         const data = JSON.stringify({hex: colorPicker.color.hexString, rgb: colorPicker.color.rgb});
         //Telegram.WebApp.sendData(data);
-        alert(Telegram.WebApp.initDataUnsafe);
+        alert(Telegram.WebApp.initData);
+        alert(JSON.stringify(Telegram.WebApp.initDataUnsafe));
         //Telegram.WebApp.close();
     });
 </script>
